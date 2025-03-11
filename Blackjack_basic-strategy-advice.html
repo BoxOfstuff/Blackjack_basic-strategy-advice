@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blackjack Strategy Advisor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        #app {
+            max-width: 500px;
+            background: white;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 12px;
+            box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.2);
+        }
+        select, button {
+            width: 90%;
+            max-width: 300px;
+            padding: 10px;
+            margin: 10px;
+            font-size: 18px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        #result {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Blackjack Strategy Advisor</h1>
+    
+    <div id="app">
+        <label for="card1">Your First Card:</label>
+        <select id="card1"></select>
+
+        <label for="card2">Your Second Card:</label>
+        <select id="card2"></select>
+
+        <label for="dealer">Dealer's Upcard:</label>
+        <select id="dealer"></select>
+
+        <button onclick="getStrategy()">Get Advice</button>
+        <div id="result">Your move will appear here.</div>
+    </div>
+
+    <script>
+        const cards = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+        
+        function populateDropdowns() {
+            let selects = [document.getElementById("card1"), document.getElementById("card2"), document.getElementById("dealer")];
+            selects.forEach(select => {
+                cards.forEach(card => {
+                    let option = document.createElement("option");
+                    option.value = card;
+                    option.textContent = card;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function getStrategy() {
+            let c1 = document.getElementById("card1").value;
+            let c2 = document.getElementById("card2").value;
+            let dealer = document.getElementById("dealer").value;
+            let playerHand = [c1, c2].sort().join("");  // Ensures proper combination handling
+            let advice = basicStrategy(playerHand, dealer);
+            document.getElementById("result").innerText = advice;
+        }
+
+        function basicStrategy(playerHand, dealer) {
+            let dealerValue = dealer === "A" ? 11 : parseInt(dealer);
+
+            // **Pairs (Splitting Logic)**
+            if (playerHand === "AA") return "Split Aces";
+            if (playerHand === "88") return "Split 8s";
+
+            if (playerHand === "1010") return "Stand";
+            if (playerHand === "55") return dealerValue >= 2 && dealerValue <= 9 ? "Double" : "Hit";
+
+            if (playerHand === "99") return dealerValue === 7 ? "Stand" : dealerValue <= 9 ? "Split" : "Stand";
+            if (["22", "33", "77"].includes(playerHand) && dealerValue <= 7) return "Split";
+            if (playerHand === "66" && dealerValue <= 6) return "Split";
+
+            // **Soft hands (Aces involved)**
+            if (playerHand.includes("A")) {
+                let otherCard = playerHand.replace("A", "");
+                let softTotal = otherCard === "A" ? 12 : parseInt(otherCard) + 11;
+
+                if (softTotal >= 21) return "Stand";
+                if (softTotal === 20) return "Stand";
+                if (softTotal === 19) return dealerValue === 6 ? "Double" : "Stand";
+                if (softTotal === 18) {
+                    if (dealerValue >= 2 && dealerValue <= 6) return "Double";
+                    if (dealerValue === 7 || dealerValue === 8) return "Stand";
+                    return "Hit";
+                }
+                if (softTotal === 17) return dealerValue >= 3 && dealerValue <= 6 ? "Double" : "Hit";
+                if (softTotal <= 16) return dealerValue >= 5 && dealerValue <= 6 ? "Double" : "Hit";
+            }
+
+            // **Hard hands**
+            let hardTotal = parseInt(playerHand[0]) + parseInt(playerHand[1]);
+            if (hardTotal >= 17) return "Stand";
+            if (hardTotal >= 13 && dealerValue <= 6) return "Stand";
+            if (hardTotal === 12 && dealerValue >= 4 && dealerValue <= 6) return "Stand";
+
+            if (hardTotal === 11) return "Double";
+            if (hardTotal === 10 && dealerValue <= 9) return "Double";
+            if (hardTotal === 9 && dealerValue >= 3 && dealerValue <= 6) return "Double";
+
+            return "Hit"; // Default if no conditions match
+        }
+
+        populateDropdowns();
+    </script>
+
+</body>
+</html>
